@@ -1,87 +1,91 @@
 ﻿<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
     <meta charset="utf-8" />
     <title></title>
     <link href="./artDialog/skins/blue.css" rel="stylesheet" />
     <script src="./artDialog/artDialog.js"></script>
-    <script src="./../build/xPromiseQueue.js"></script>
+    <script src="https://cdn.bootcss.com/require.js/2.3.4/require.min.js"></script>
 </head>
+
 <body>
 
     <div id="divLog"></div>
 
 
     <script type="text/javascript">
-        
-        let divLog=document.getElementById('divLog');
-        let log=(str)=>{
-            divLog.innerHTML+=`<p>${str}</p>`;
-        };
-        
+        require(['./../build/xPromiseQueue'], (xPromiseQueue) => {
+            let divLog = document.getElementById('divLog');
+            let log = (str) => {
+                divLog.innerHTML += `<p>${str}</p>`;
+            };
 
-        let test = new lib();
-        let obj = null;
+            let { QItem, Queue } = xPromiseQueue['default'];
+            let test = new Queue();
+            let obj = null;
 
-        obj=new QItem(function(){
-            let _this=this;
-            art.dialog({
-                content: '我是一个弹窗哦，快点下面的按钮',
-                ok: function () {
-                    _this.resolve('您单击了确认！');
-                    log('弹窗1已处理完毕！');
-                },
-                cancel: function(){
-                    _this.resolve(`您单击了取消！`);
-                    log('弹窗1已处理完毕！');
-                }
+            obj = new QItem(function () {
+                let _this = this;
+                art.dialog({
+                    content: '我是一个弹窗哦，快点下面的按钮',
+                    ok: function () {
+                        _this.resolve('您单击了确认！');
+                        log('弹窗1已处理完毕！');
+                    },
+                    cancel: function () {
+                        _this.resolve(`您单击了取消！`);
+                        log('弹窗1已处理完毕！');
+                    }
+                });
             });
-        });
-        obj.name="弹窗1";
-        test.reg(obj);
+            obj.name = "弹窗1";
+            test.reg(obj);
 
-        test.run();
+            test.run();
 
-        obj=new QItem(function(){
-            let _this=this;
-            art.dialog({
-                content: '我又是一个弹窗，你点了吗？',
-                ok: function () {
-                    _this.resolve('您单击了确认！');
-                    log('弹窗2已处理完毕！');
-                },
-                cancel: function(){
-                    _this.resolve(`您单击了取消！`);
-                    log('弹窗2已处理完毕！');
-                }
+            obj = new QItem(function () {
+                let _this = this;
+                art.dialog({
+                    content: '我又是一个弹窗，你点了吗？',
+                    ok: function () {
+                        _this.resolve('您单击了确认！');
+                        log('弹窗2已处理完毕！');
+                    },
+                    cancel: function () {
+                        _this.resolve(`您单击了取消！`);
+                        log('弹窗2已处理完毕！');
+                    }
+                });
             });
-        });
-        obj.name="弹窗2";
-        test.reg(obj);
-        
+            obj.name = "弹窗2";
+            test.reg(obj);
 
-        obj = new QItem(function () {
-            let _this = this;
-            art.dialog({
-                content: '我是一个优先级很高的事件，赶紧确认一下？',
-                ok: function () {
-                    _this.resolve('您单击了确认！');
-                    log('弹窗3已处理完毕！');
-                },
-                cancel: function () {
-                    _this.resolve(`您单击了取消！`);
-                    log('弹窗3已处理完毕！');
-                }
+
+            obj = new QItem(function () {
+                let _this = this;
+                art.dialog({
+                    content: '我是一个优先级很高的事件，赶紧确认一下？',
+                    ok: function () {
+                        _this.resolve('您单击了确认！');
+                        log('弹窗3已处理完毕！');
+                    },
+                    cancel: function () {
+                        _this.resolve(`您单击了取消！`);
+                        log('弹窗3已处理完毕！');
+                    }
+                });
             });
+            obj.name = "弹窗3";
+            test.reg(obj, 1);
+
+
         });
-        obj.name = "弹窗3";
-        test.reg(obj, 1);
-
-
     </script>
 
 
-    
+
 </body>
+
 </html>

@@ -1,5 +1,25 @@
-//declare var Promise:PromiseConstructor;
 
+/**
+ * Promise状态
+ */
+enum PromiseStatus {
+    Pending,
+    Fulfilled,
+    Rejected
+}
+
+/**
+ * 优先级
+ */
+enum Priority {
+    Low,
+    High
+}
+
+
+/**
+ * 执行项
+ */
 class QItem {
     constructor(fun: () => void) {
         this.run = () => {
@@ -13,40 +33,61 @@ class QItem {
                 }
                 return this.next.run();
             }).catch(() => {
-                    this.pmsStatus = PromiseStatus.Rejected;
+                this.pmsStatus = PromiseStatus.Rejected;
             });
         };
     }
-    name: string;
-    run: () => Promise<any>;
-    private _resolve: () => void;
-    private _reject: () => void;
+    /**
+     * 名称
+     */
+    name: string
+    /**
+     * 执行该队列项
+     */
+    run: () => Promise<any>
+    private _resolve: () => void
+    private _reject: () => void
+    /**
+     * resolve
+     */
     resolve(): void {
         this._resolve.apply(this, arguments);
         this.pmsStatus = PromiseStatus.Fulfilled;
-    };
+    }
+    /**
+     * reject
+     */
     reject(): void {
         this._reject.apply(this, arguments);
         this.pmsStatus = PromiseStatus.Rejected;
-    };
-    pmsStatus: PromiseStatus = PromiseStatus.Pending;
-    next: QItem;
+    }
+    /**
+     * 该Promise状态
+     */
+    pmsStatus: PromiseStatus = PromiseStatus.Pending
+    /**
+     * 下一个执行项
+     */
+    next: QItem
 }
 
-enum PromiseStatus {
-    Pending,
-    Fulfilled,
-    Rejected
-}
-
-enum Priority {
-    Low,
-    High
-}
-
-class lib {
-    private isWatching: boolean=false;
-    qList: Array<QItem> = [];
+/**
+ * 模块主体
+ */
+class Queue {
+    /**
+     * 是否为监听中
+     */
+    private isWatching: boolean = false
+    /**
+     * 待执行的Promise队列
+     */
+    qList: Array<QItem> = []
+    /**
+     * 注册一个Promise项到执行队列中
+     * @param item 执行项
+     * @param priority 优先级（默认为低） 
+     */
     reg(item: QItem, priority: Priority = Priority.Low): this {
 
         //#region 监听状态
@@ -76,7 +117,7 @@ class lib {
 
         //#region 初始化状态
         if (!this.qList || this.qList.length == 0) {
-            this.qList=[item];
+            this.qList = [item];
             return this;
         }
 
@@ -94,7 +135,10 @@ class lib {
         //#endregion
 
         return this;
-    };
+    }
+    /**
+     * 运行队列
+     */
     run(): this {
         this.isWatching = true;
         if (this.qList.length === 0) {
@@ -102,10 +146,13 @@ class lib {
         }
         this.qList[0].run();
         return this;
-    };
+    }
+    /**
+     * 获取当前正在执行中的队列项
+     */
     getCur(): QItem {
         return this.qList.find(k => k.pmsStatus == PromiseStatus.Pending);
     }
 }
 
-//export default new lib();
+export default { QItem, Queue };
