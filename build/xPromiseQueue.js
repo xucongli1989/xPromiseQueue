@@ -1,3 +1,11 @@
+/**
+ * ******************************************************************************************
+ * 开源协议：https://github.com/xucongli1989/xPromiseQueue/blob/master/LICENSE
+ * 项目地址：https://github.com/xucongli1989/xPromiseQueue
+ * 电子邮件：80213876@qq.com
+ * By XCL 2017.08 in Shenzhen. China
+ ********************************************************************************************
+ */
 define(["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
