@@ -87,11 +87,24 @@ class Queue {
     /**
      * 是否为监听中
      */
-    private isWatching: boolean = false
+    isWatching: boolean = false
     /**
      * 待执行的Promise队列
      */
-    qList: Array<QItem> = []
+    private qList: Array<QItem> = []
+    /**
+     * 将当前队列中的每一项按实际执行顺序重新排列
+     */
+    private reSortQList(): void {
+        let first = this.qList[0];
+        if (!first) return;
+        this.qList = [];
+        let fun = (m: QItem) => {
+            this.qList.push(m);
+            m.next && fun(m.next);
+        };
+        fun(first);
+    }
     /**
      * 注册一个Promise项到执行队列中
      * @param item 执行项
@@ -106,6 +119,7 @@ class Queue {
             //队列全部执行完毕
             if (!cur) {
                 this.qList = [item];
+                this.isWatching = false;
                 this.run();
                 return this;
             }
@@ -114,18 +128,20 @@ class Queue {
             if (priority == Priority.High) {
                 item.next = cur.next;
                 cur.next = item;
-                return this;
+            } else {
+                //低优先级
+                this.qList[this.qList.length - 1].next = item;
             }
 
-            //低优先级
-            this.qList[this.qList.length - 1].next = item;
+            //重排序
+            this.reSortQList();
 
             return this;
         }
         //#endregion
 
         //#region 初始化状态
-        if (!this.qList || this.qList.length == 0) {
+        if (this.qList.length == 0) {
             this.qList = [item];
             return this;
         }
@@ -149,6 +165,7 @@ class Queue {
      * 运行队列
      */
     run(): this {
+        if (this.isWatching) return this;
         this.isWatching = true;
         if (this.qList.length === 0) {
             return;
@@ -160,7 +177,20 @@ class Queue {
      * 获取当前正在执行中的队列项
      */
     getCur(): QItem {
-        return this.qList.find(k => k.pmsStatus == PromiseStatus.Pending);
+
+        if (this.qList.length == 0) return null;
+
+        let c: QItem;
+        let fun = (m: QItem) => {
+            if (m.pmsStatus == PromiseStatus.Pending) {
+                c = m;
+            } else {
+                m.next && fun(m.next);
+            }
+        };
+        fun(this.qList[0]);
+
+        return c;
     }
 }
 

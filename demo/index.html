@@ -12,14 +12,35 @@
 
 <body>
 
-    <div id="divLog"></div>
+    <fieldset>
+        <legend><strong>Log information:</strong></legend>
+        <div id="divLog"></div>
+    </fieldset>
+
+
+    <br/>
+    <br/>
+
+    <fieldset>
+        <legend><strong>Action:</strong></legend>
+        <div>
+            <button id="btnRun">运行队列</button>
+            <button id="btnAdd">追加一项任务至目前队列中</button>
+            <button id="btnAddFirst">追加一项高优先级的任务至目前队列中</button>
+        </div>
+    </fieldset>
+
 
 
     <script type="text/javascript">
         require(['./../build/xPromiseQueue'], (xPromiseQueue) => {
             let divLog = document.getElementById('divLog');
-            let log = (str) => {
-                divLog.innerHTML += `<p>${str}</p>`;
+            let log = function (str) {
+                if (str) {
+                    divLog.innerHTML += `<p>${str}</p>`;
+                } else {
+                    divLog.innerHTML += `<p>${this.name}已处理完毕</p>`;
+                }
             };
 
             let { QItem, Queue } = xPromiseQueue['default'];
@@ -29,56 +50,89 @@
             obj = new QItem(function () {
                 let _this = this;
                 art.dialog({
-                    content: '我是一个弹窗哦，快点下面的按钮',
+                    content: '我是一个默认弹窗哦，快点下面的按钮',
                     ok: function () {
                         _this.resolve('您单击了确认！');
-                        log('弹窗1已处理完毕！');
+                        log.call(_this);
                     },
                     cancel: function () {
                         _this.resolve(`您单击了取消！`);
-                        log('弹窗1已处理完毕！');
+                        log.call(_this);
                     }
                 });
             });
-            obj.name = "弹窗1";
+            obj.name = "默认弹窗1";
             test.reg(obj);
-
-            test.run();
 
             obj = new QItem(function () {
                 let _this = this;
                 art.dialog({
-                    content: '我又是一个弹窗，你点了吗？',
+                    content: '我又是一个默认弹窗，你点了吗？',
                     ok: function () {
                         _this.resolve('您单击了确认！');
-                        log('弹窗2已处理完毕！');
+                        log.call(_this);
                     },
                     cancel: function () {
                         _this.resolve(`您单击了取消！`);
-                        log('弹窗2已处理完毕！');
+                        log.call(_this);
                     }
                 });
             });
-            obj.name = "弹窗2";
+            obj.name = "默认弹窗2";
             test.reg(obj);
 
 
-            obj = new QItem(function () {
-                let _this = this;
-                art.dialog({
-                    content: '我是一个优先级很高的事件，赶紧确认一下？',
-                    ok: function () {
-                        _this.resolve('您单击了确认！');
-                        log('弹窗3已处理完毕！');
-                    },
-                    cancel: function () {
-                        _this.resolve(`您单击了取消！`);
-                        log('弹窗3已处理完毕！');
-                    }
-                });
+            document.getElementById('btnRun').addEventListener('click', () => {
+                if (test.isWatching) {
+                    log('队列已在运行中，目前正在监听队列状态...');
+                }
+                test.run();
             });
-            obj.name = "弹窗3";
-            test.reg(obj, 1);
+
+            document.getElementById('btnAdd').addEventListener('click', () => {
+
+                obj = new QItem(function () {
+                    let _this = this;
+                    art.dialog({
+                        content: '我是一个新加的弹窗，点一下吧？',
+                        ok: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        },
+                        cancel: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        }
+                    });
+
+                });
+                obj.name = '新加的弹窗';
+                test.reg(obj);
+
+            });
+
+            document.getElementById('btnAddFirst').addEventListener('click', () => {
+
+                obj = new QItem(function () {
+                    let _this = this;
+                    art.dialog({
+                        content: '我是一个新加的<span style="color:#f00;">高优先级</span>的弹窗，点一下吧？',
+                        ok: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        },
+                        cancel: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        }
+                    });
+
+                });
+                obj.name = '新加的高优先级的弹窗';
+                test.reg(obj, 1);
+
+            });
+
 
 
         });
