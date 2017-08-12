@@ -168,7 +168,7 @@ class Queue {
         if (this.isWatching) return this;
         this.isWatching = true;
         if (this.qList.length === 0) {
-            return;
+            return this;
         }
         this.qList[0].run();
         return this;

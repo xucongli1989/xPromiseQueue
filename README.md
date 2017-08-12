@@ -77,7 +77,7 @@
 <td>isWatching</td>
 <td>boolean</td>
 <td></td>
-<td>是否为监听中</td>
+<td>是否为监听中（也就是是否调用了该对象的run），默认为false</td>
 </tr>
 <tr>
 <td>reg</td>
@@ -98,6 +98,42 @@
 <td>获取当前正在执行中的队列项</td>
 </tr>
 </table>
+
+## 简单使用
+
+	//先注册队列后，再统一执行
+    new Queue().reg(new QItem(function(){
+		setTimeout(()=>{
+			console.log('test 1...');
+			this.resolve();
+		},2000);
+	})).reg(new QItem(function(){
+		setTimeout(()=>{
+			console.log('test 2...');
+			this.resolve();
+		},3000);
+	})).run();
+
+	//test 1...
+	//test 2...
+
+
+	//先执行，再动态注册
+    new Queue().run().reg(new QItem(function(){
+		setTimeout(()=>{
+			console.log('test 1...');
+			this.resolve();
+		},2000);
+	})).reg(new QItem(function(){
+		setTimeout(()=>{
+			console.log('test 2...');
+			this.resolve();
+		},3000);
+	}));
+
+	//test 1...
+	//test 2...
+
 
 ## Demo预览图
 

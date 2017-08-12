@@ -148,7 +148,7 @@ define(["require", "exports"], function (require, exports) {
                 return this;
             this.isWatching = true;
             if (this.qList.length === 0) {
-                return;
+                return this;
             }
             this.qList[0].run();
             return this;
