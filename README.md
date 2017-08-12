@@ -83,7 +83,7 @@
 <td>reg</td>
 <td>function(item: QItem, priority: Priority = Priority.Low)</td>
 <td>this</td>
-<td>注册一个Promise项到执行队列中</td>
+<td>注册一个Promise项到执行队列中。`priority`为优先级，0为低优先级（默认），1为高优先级。当指定高优先级时，则当前Promise执行完后就立即开始执行该任务。</td>
 </tr>
 <tr>
 <td>run</td>
