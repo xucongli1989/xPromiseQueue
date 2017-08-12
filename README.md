@@ -98,3 +98,7 @@
 <td>获取当前正在执行中的队列项</td>
 </tr>
 </table>
+
+## Demo预览图
+
+![](https://raw.githubusercontent.com/xucongli1989/xPromiseQueue/master/demo/img.gif)
