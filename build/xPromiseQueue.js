@@ -171,6 +171,38 @@ define(["require", "exports"], function (require, exports) {
             fun(this.qList[0]);
             return c;
         }
+        /**
+         * 销毁指定队列项
+         * 此方法不会去调用该项的解决或拒绝，直接从队列中删除此项
+         * @param item 要删除的项
+         * @param callback 删除后的回调函数
+         */
+        destroy(item, callback) {
+            if (null == item || item.pmsStatus != PromiseStatus.Pending) {
+                return;
+            }
+            for (let i = 0; i < this.qList.length; i++) {
+                let m = this.qList[i];
+                if (m != item) {
+                    continue;
+                }
+                if (i == 0) {
+                    //第一项
+                    this.qList.shift();
+                    this.run();
+                }
+                else if (i == this.qList.length - 1) {
+                    //最后一项
+                    this.qList[this.qList.length - 2].next = null;
+                }
+                else {
+                    //中间项
+                    this.qList[i - 1].next = this.qList[i + 1];
+                }
+                callback && callback();
+                break;
+            }
+        }
     }
     exports.default = { QItem, Queue };
 });
