@@ -148,7 +148,7 @@ define(["require", "exports"], function (require, exports) {
             return this;
         }
         /**
-         * 注册唯一的一个队列项。此方法会先销毁整个队列，再重新注册只有一个执行项的队列
+         * 注册唯一的一个队列项。此方法会先销毁整个队列，再重新注册只有一个执行项的队列。注册完后，会锁定此队列。
          * @param item 队列项
          */
         regUnique(item) {

@@ -36,6 +36,7 @@
             <button id="btnAddFirst">追加一项高优先级的任务至目前队列中</button>
             <button id="btnDestroy">销毁正在执行的队列项</button>
             <button id="btnDestroyAll">销毁整个队列</button>
+            <button id="btnRegUnique">用新的队列项覆盖现有队列，并锁定此队列</button>
         </div>
     </fieldset>
 
@@ -61,11 +62,11 @@
                 let dg = art.dialog({
                     content: '我是一个默认弹窗哦，快点下面的按钮',
                     ok: function () {
-                        _this.resolve('您单击了确认！');
+                        _this.resolve();
                         log.call(_this);
                     },
                     cancel: function () {
-                        _this.resolve(`您单击了取消！`);
+                        _this.resolve();
                         log.call(_this);
                     }
                 });
@@ -82,11 +83,11 @@
                 let dg = art.dialog({
                     content: '我又是一个默认弹窗，你点了吗？',
                     ok: function () {
-                        _this.resolve('您单击了确认！');
+                        _this.resolve();
                         log.call(_this);
                     },
                     cancel: function () {
-                        _this.resolve(`您单击了取消！`);
+                        _this.resolve();
                         log.call(_this);
                     }
                 });
@@ -173,6 +174,30 @@
                 log('已销毁整个队列！');
             });
 
+
+            document.getElementById('btnRegUnique').addEventListener('click', () => {
+                obj = new QItem(function () {
+                    let _this = this;
+                    let dg = art.dialog({
+                        content: '我是一个覆盖现有弹窗的超级弹窗，点一下吧？',
+                        ok: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        },
+                        cancel: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        }
+                    });
+                    this.destroy = () => {
+                        dg.close();
+                        log('已成功销毁该队列项！');
+                    };
+                });
+                obj.name = '这是覆盖现有弹窗的超级弹窗';
+                test.regUnique(obj);
+                log('已覆盖整个队列！');
+            });
         });
     </script>
 
