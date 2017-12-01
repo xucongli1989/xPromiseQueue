@@ -178,7 +178,7 @@ define(["require", "exports"], function (require, exports) {
          * @param callback 删除后的回调函数
          */
         destroy(item, callback) {
-            if (null == item || item.pmsStatus != PromiseStatus.Pending) {
+            if (null == item) {
                 return;
             }
             for (let i = 0; i < this.qList.length; i++) {
@@ -189,7 +189,9 @@ define(["require", "exports"], function (require, exports) {
                 if (i == 0) {
                     //第一项
                     this.qList.shift();
-                    this.run();
+                    if (this.isWatching && this.qList[0]) {
+                        this.qList[0].run();
+                    }
                 }
                 else if (i == this.qList.length - 1) {
                     //最后一项
@@ -199,6 +201,7 @@ define(["require", "exports"], function (require, exports) {
                     //中间项
                     this.qList[i - 1].next = this.qList[i + 1];
                 }
+                this.reSortQList();
                 callback && callback();
                 break;
             }

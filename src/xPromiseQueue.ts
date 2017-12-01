@@ -199,7 +199,7 @@ class Queue {
      * @param callback 删除后的回调函数
      */
     destroy(item: QItem, callback: () => {}): void {
-        if (null == item || item.pmsStatus != PromiseStatus.Pending) {
+        if (null == item) {
             return;
         }
         for (let i = 0; i < this.qList.length; i++) {
@@ -210,7 +210,9 @@ class Queue {
             if (i == 0) {
                 //第一项
                 this.qList.shift();
-                this.run();
+                if (this.isWatching && this.qList[0]) {
+                    this.qList[0].run();
+                }
             } else if (i == this.qList.length - 1) {
                 //最后一项
                 this.qList[this.qList.length - 2].next = null;
@@ -218,6 +220,7 @@ class Queue {
                 //中间项
                 this.qList[i - 1].next = this.qList[i + 1];
             }
+            this.reSortQList();
             callback && callback();
             break;
         }
