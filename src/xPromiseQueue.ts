@@ -34,7 +34,7 @@ class QItem {
     constructor(fun: () => void) {
         this.run = () => {
             if (this.pmsStatus != PromiseStatus.None) {
-                return new Promise(() => { return {}; });
+                return new Promise(() => { });
             }
             this.pmsStatus = PromiseStatus.Pending;
             return new Promise((rs: any, rj: any) => {
@@ -111,9 +111,15 @@ class Queue {
     private reSortQList(): void {
         let first = this.qList[0];
         if (!first) return;
+        let start: QItem = null;
         this.qList = [];
         let fun = (m: QItem) => {
-            this.qList.push(m);
+            if (!start && (m.pmsStatus == PromiseStatus.None || m.pmsStatus == PromiseStatus.Pending)) {
+                start = m;
+            }
+            if (start) {
+                this.qList.push(m);
+            }
             m.next && fun(m.next);
         };
         fun(first);
@@ -243,6 +249,9 @@ class Queue {
         if (null == item || item.pmsStatus == PromiseStatus.Fulfilled || item.pmsStatus == PromiseStatus.Rejected) {
             return;
         }
+
+        let cur = this.getCur();
+
         for (let i = 0; i < this.qList.length; i++) {
             if (this.qList[i] != item) {
                 continue;
@@ -250,20 +259,25 @@ class Queue {
             if (i == 0) {
                 //第一项
                 this.qList.shift();
-                if (this.isWatching && this.qList[0]) {
-                    this.qList[0].run();
-                }
             } else if (i == this.qList.length - 1) {
                 //最后一项
-                this.qList[this.qList.length - 2].next = null;
+                this.qList[i - 1].next = null;
             } else {
                 //中间项
-                this.qList[i - 1].next = this.qList[i + 1];
+                this.qList[i - 1].next = item.next;
+            }
+            if (this.isWatching) {
+                if (cur === item) {
+                    //销毁的正是当前项
+                    item.destroyCallback && item.destroyCallback();
+                    item.next && item.next.run();
+                }
             }
             this.reSortQList();
-            item.destroyCallback && item.destroyCallback();
             break;
+
         }
+
     }
     /**
      * 销毁整个队列
