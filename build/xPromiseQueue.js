@@ -233,7 +233,7 @@ define(["require", "exports"], function (require, exports) {
                     this.qList[i - 1].next = this.qList[i + 1];
                 }
                 this.reSortQList();
-                item.destroy && item.destroy();
+                item.destroyCallback && item.destroyCallback();
                 break;
             }
         }

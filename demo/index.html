@@ -25,6 +25,16 @@
 
     <fieldset>
         <legend>
+            <strong>Queue information:</strong>
+        </legend>
+        <div id="divQueue"></div>
+    </fieldset>
+
+    <br/>
+    <br/>
+
+    <fieldset>
+        <legend>
             <strong>Action:</strong>
         </legend>
         <div>
@@ -44,7 +54,12 @@
 
     <script type="text/javascript">
         require(['./../build/xPromiseQueue'], (xPromiseQueue) => {
+
+            let { QItem, Queue } = xPromiseQueue['default'];
+            let test = new Queue();
+            let obj = null;
             let divLog = document.getElementById('divLog');
+
             let log = function (str) {
                 if (str) {
                     divLog.innerHTML += `<p>${str}</p>`;
@@ -53,9 +68,9 @@
                 }
             };
 
-            let { QItem, Queue } = xPromiseQueue['default'];
-            let test = new Queue();
-            let obj = null;
+            let showQueueLog = function () {
+                document.getElementById('divQueue').innerHTML = JSON.stringify(test);
+            };
 
             obj = new QItem(function () {
                 let _this = this;
@@ -70,7 +85,7 @@
                         log.call(_this);
                     }
                 });
-                this.destroy = () => {
+                this.destroyCallback = () => {
                     dg.close();
                     log('已成功销毁该队列项！');
                 };
@@ -91,7 +106,7 @@
                         log.call(_this);
                     }
                 });
-                this.destroy = () => {
+                this.destroyCallback = () => {
                     dg.close();
                     log('已成功销毁该队列项！');
                 };
@@ -99,6 +114,11 @@
             obj.name = "默认弹窗2";
             test.reg(obj);
 
+
+            document.addEventListener('click', () => {
+                showQueueLog();
+            });
+            showQueueLog();
 
             document.getElementById('btnRun').addEventListener('click', () => {
                 if (test.isWatching) {
@@ -122,7 +142,7 @@
                             log.call(_this);
                         }
                     });
-                    this.destroy = () => {
+                    this.destroyCallback = () => {
                         dg.close();
                         log('已成功销毁该队列项！');
                     };
@@ -147,7 +167,7 @@
                             log.call(_this);
                         }
                     });
-                    this.destroy = () => {
+                    this.destroyCallback = () => {
                         dg.close();
                         log('已成功销毁该队列项！');
                     };
@@ -189,7 +209,7 @@
                             log.call(_this);
                         }
                     });
-                    this.destroy = () => {
+                    this.destroyCallback = () => {
                         dg.close();
                         log('已成功销毁该队列项！');
                     };

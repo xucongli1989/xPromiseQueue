@@ -81,7 +81,7 @@ class QItem {
     /**
      * 从队列中销毁后需要执行的函数
      */
-    destroy: () => void
+    destroyCallback: () => void
 }
 
 /**
@@ -257,7 +257,7 @@ class Queue {
                 this.qList[i - 1].next = this.qList[i + 1];
             }
             this.reSortQList();
-            item.destroy && item.destroy();
+            item.destroyCallback && item.destroyCallback();
             break;
         }
     }
