@@ -12,6 +12,7 @@
  * Promise状态
  */
 enum PromiseStatus {
+    None,
     Pending,
     Fulfilled,
     Rejected
@@ -32,6 +33,10 @@ enum Priority {
 class QItem {
     constructor(fun: () => void) {
         this.run = () => {
+            if (this.pmsStatus != PromiseStatus.None) {
+                return new Promise(() => { return {}; });
+            }
+            this.pmsStatus = PromiseStatus.Pending;
             return new Promise((rs: any, rj: any) => {
                 this._resolve = rs;
                 this._reject = rj;
@@ -73,7 +78,7 @@ class QItem {
     /**
      * 该Promise状态
      */
-    pmsStatus: PromiseStatus = PromiseStatus.Pending
+    pmsStatus: PromiseStatus = PromiseStatus.None
     /**
      * 下一个执行项
      */
@@ -196,7 +201,7 @@ class Queue {
         return this;
     }
     /**
-     * 获取当前正在执行中的队列项
+     * 获取当前正在执行中的队列项（运行时，队列中第一个状态为Pending的项）
      */
     getCur(): QItem {
         if (!this.isWatching) {
@@ -235,12 +240,11 @@ class Queue {
      * @param item 要销毁的队列项
      */
     destroy(item: QItem): void {
-        if (null == item) {
+        if (null == item || item.pmsStatus == PromiseStatus.Fulfilled || item.pmsStatus == PromiseStatus.Rejected) {
             return;
         }
         for (let i = 0; i < this.qList.length; i++) {
-            let m = this.qList[i];
-            if (m != item) {
+            if (this.qList[i] != item) {
                 continue;
             }
             if (i == 0) {

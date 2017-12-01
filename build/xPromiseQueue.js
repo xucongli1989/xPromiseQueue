@@ -14,9 +14,10 @@ define(["require", "exports"], function (require, exports) {
      */
     var PromiseStatus;
     (function (PromiseStatus) {
-        PromiseStatus[PromiseStatus["Pending"] = 0] = "Pending";
-        PromiseStatus[PromiseStatus["Fulfilled"] = 1] = "Fulfilled";
-        PromiseStatus[PromiseStatus["Rejected"] = 2] = "Rejected";
+        PromiseStatus[PromiseStatus["None"] = 0] = "None";
+        PromiseStatus[PromiseStatus["Pending"] = 1] = "Pending";
+        PromiseStatus[PromiseStatus["Fulfilled"] = 2] = "Fulfilled";
+        PromiseStatus[PromiseStatus["Rejected"] = 3] = "Rejected";
     })(PromiseStatus || (PromiseStatus = {}));
     /**
      * 优先级
@@ -34,8 +35,12 @@ define(["require", "exports"], function (require, exports) {
             /**
              * 该Promise状态
              */
-            this.pmsStatus = PromiseStatus.Pending;
+            this.pmsStatus = PromiseStatus.None;
             this.run = () => {
+                if (this.pmsStatus != PromiseStatus.None) {
+                    return new Promise(() => { return {}; });
+                }
+                this.pmsStatus = PromiseStatus.Pending;
                 return new Promise((rs, rj) => {
                     this._resolve = rs;
                     this._reject = rj;
@@ -171,7 +176,7 @@ define(["require", "exports"], function (require, exports) {
             return this;
         }
         /**
-         * 获取当前正在执行中的队列项
+         * 获取当前正在执行中的队列项（运行时，队列中第一个状态为Pending的项）
          */
         getCur() {
             if (!this.isWatching) {
@@ -209,12 +214,11 @@ define(["require", "exports"], function (require, exports) {
          * @param item 要销毁的队列项
          */
         destroy(item) {
-            if (null == item) {
+            if (null == item || item.pmsStatus == PromiseStatus.Fulfilled || item.pmsStatus == PromiseStatus.Rejected) {
                 return;
             }
             for (let i = 0; i < this.qList.length; i++) {
-                let m = this.qList[i];
-                if (m != item) {
+                if (this.qList[i] != item) {
                     continue;
                 }
                 if (i == 0) {
