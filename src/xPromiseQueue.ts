@@ -78,6 +78,10 @@ class QItem {
      * 下一个执行项
      */
     next: QItem
+    /**
+     * 从队列中销毁后需要执行的函数
+     */
+    destroy: () => void
 }
 
 /**
@@ -88,6 +92,10 @@ class Queue {
      * 是否为监听中
      */
     isWatching: boolean = false
+    /**
+     * 当前队列是否已锁定（true:不允许再注册新的执行项）
+     */
+    private isLock: boolean = false
     /**
      * 待执行的Promise队列
      */
@@ -111,6 +119,10 @@ class Queue {
      * @param priority 优先级（默认为低） 
      */
     reg(item: QItem, priority: Priority = Priority.Low): this {
+
+        if (this.isLock) {
+            return;
+        }
 
         //#region 监听状态
         if (this.isWatching) {
@@ -162,6 +174,16 @@ class Queue {
         return this;
     }
     /**
+     * 注册唯一的一个队列项。此方法会先销毁整个队列，再重新注册只有一个执行项的队列
+     * @param item 队列项
+     */
+    regUnique(item: QItem): void {
+        this.clear();
+        this.unLock();
+        this.reg(item);
+        this.lock();
+    }
+    /**
      * 运行队列
      */
     run(): this {
@@ -177,6 +199,9 @@ class Queue {
      * 获取当前正在执行中的队列项
      */
     getCur(): QItem {
+        if (!this.isWatching) {
+            return null;
+        }
 
         if (this.qList.length == 0) return null;
 
@@ -193,12 +218,23 @@ class Queue {
         return c;
     }
     /**
+     * 锁定队列
+     */
+    lock(): void {
+        this.isLock = true;
+    }
+    /**
+     * 解锁队列
+     */
+    unLock(): void {
+        this.isLock = false;
+    }
+    /**
      * 销毁指定队列项
      * 此方法不会去调用该项的解决或拒绝，直接从队列中删除此项
-     * @param item 要删除的项
-     * @param callback 删除后的回调函数
+     * @param item 要销毁的队列项
      */
-    destroy(item: QItem, callback: () => {}): void {
+    destroy(item: QItem): void {
         if (null == item) {
             return;
         }
@@ -221,8 +257,21 @@ class Queue {
                 this.qList[i - 1].next = this.qList[i + 1];
             }
             this.reSortQList();
-            callback && callback();
+            item.destroy && item.destroy();
             break;
+        }
+    }
+    /**
+     * 销毁整个队列
+     */
+    clear(): void {
+        let cur = this.getCur();
+        if (cur) {
+            cur.next = null;
+            this.qList = [cur];
+            this.destroy(cur);
+        } else {
+            this.qList = [];
         }
     }
 }

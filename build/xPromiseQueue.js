@@ -75,6 +75,10 @@ define(["require", "exports"], function (require, exports) {
              */
             this.isWatching = false;
             /**
+             * 当前队列是否已锁定（true:不允许再注册新的执行项）
+             */
+            this.isLock = false;
+            /**
              * 待执行的Promise队列
              */
             this.qList = [];
@@ -99,6 +103,9 @@ define(["require", "exports"], function (require, exports) {
          * @param priority 优先级（默认为低）
          */
         reg(item, priority = Priority.Low) {
+            if (this.isLock) {
+                return;
+            }
             //#region 监听状态
             if (this.isWatching) {
                 let cur = this.getCur();
@@ -141,6 +148,16 @@ define(["require", "exports"], function (require, exports) {
             return this;
         }
         /**
+         * 注册唯一的一个队列项。此方法会先销毁整个队列，再重新注册只有一个执行项的队列
+         * @param item 队列项
+         */
+        regUnique(item) {
+            this.clear();
+            this.unLock();
+            this.reg(item);
+            this.lock();
+        }
+        /**
          * 运行队列
          */
         run() {
@@ -157,6 +174,9 @@ define(["require", "exports"], function (require, exports) {
          * 获取当前正在执行中的队列项
          */
         getCur() {
+            if (!this.isWatching) {
+                return null;
+            }
             if (this.qList.length == 0)
                 return null;
             let c;
@@ -172,12 +192,23 @@ define(["require", "exports"], function (require, exports) {
             return c;
         }
         /**
+         * 锁定队列
+         */
+        lock() {
+            this.isLock = true;
+        }
+        /**
+         * 解锁队列
+         */
+        unLock() {
+            this.isLock = false;
+        }
+        /**
          * 销毁指定队列项
          * 此方法不会去调用该项的解决或拒绝，直接从队列中删除此项
-         * @param item 要删除的项
-         * @param callback 删除后的回调函数
+         * @param item 要销毁的队列项
          */
-        destroy(item, callback) {
+        destroy(item) {
             if (null == item) {
                 return;
             }
@@ -202,8 +233,22 @@ define(["require", "exports"], function (require, exports) {
                     this.qList[i - 1].next = this.qList[i + 1];
                 }
                 this.reSortQList();
-                callback && callback();
+                item.destroy && item.destroy();
                 break;
+            }
+        }
+        /**
+         * 销毁整个队列
+         */
+        clear() {
+            let cur = this.getCur();
+            if (cur) {
+                cur.next = null;
+                this.qList = [cur];
+                this.destroy(cur);
+            }
+            else {
+                this.qList = [];
             }
         }
     }

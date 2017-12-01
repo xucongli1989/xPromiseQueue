@@ -13,7 +13,9 @@
 <body>
 
     <fieldset>
-        <legend><strong>Log information:</strong></legend>
+        <legend>
+            <strong>Log information:</strong>
+        </legend>
         <div id="divLog"></div>
     </fieldset>
 
@@ -22,11 +24,18 @@
     <br/>
 
     <fieldset>
-        <legend><strong>Action:</strong></legend>
+        <legend>
+            <strong>Action:</strong>
+        </legend>
         <div>
+            <p>
+                注：初始队列中已包含两个默认的执行项。
+            </p>
             <button id="btnRun">运行队列</button>
             <button id="btnAdd">追加一项任务至目前队列中</button>
             <button id="btnAddFirst">追加一项高优先级的任务至目前队列中</button>
+            <button id="btnDestroy">销毁正在执行的队列项</button>
+            <button id="btnDestroyAll">销毁整个队列</button>
         </div>
     </fieldset>
 
@@ -49,7 +58,7 @@
 
             obj = new QItem(function () {
                 let _this = this;
-                art.dialog({
+                let dg = art.dialog({
                     content: '我是一个默认弹窗哦，快点下面的按钮',
                     ok: function () {
                         _this.resolve('您单击了确认！');
@@ -60,13 +69,17 @@
                         log.call(_this);
                     }
                 });
+                this.destroy = () => {
+                    dg.close();
+                    log('已成功销毁该队列项！');
+                };
             });
             obj.name = "默认弹窗1";
             test.reg(obj);
 
             obj = new QItem(function () {
                 let _this = this;
-                art.dialog({
+                let dg = art.dialog({
                     content: '我又是一个默认弹窗，你点了吗？',
                     ok: function () {
                         _this.resolve('您单击了确认！');
@@ -77,6 +90,10 @@
                         log.call(_this);
                     }
                 });
+                this.destroy = () => {
+                    dg.close();
+                    log('已成功销毁该队列项！');
+                };
             });
             obj.name = "默认弹窗2";
             test.reg(obj);
@@ -93,7 +110,7 @@
 
                 obj = new QItem(function () {
                     let _this = this;
-                    art.dialog({
+                    let dg = art.dialog({
                         content: '我是一个新加的弹窗，点一下吧？',
                         ok: function () {
                             _this.resolve();
@@ -104,7 +121,10 @@
                             log.call(_this);
                         }
                     });
-
+                    this.destroy = () => {
+                        dg.close();
+                        log('已成功销毁该队列项！');
+                    };
                 });
                 obj.name = '新加的弹窗';
                 test.reg(obj);
@@ -115,7 +135,7 @@
 
                 obj = new QItem(function () {
                     let _this = this;
-                    art.dialog({
+                    let dg = art.dialog({
                         content: '我是一个新加的<span style="color:#f00;">高优先级</span>的弹窗，点一下吧？',
                         ok: function () {
                             _this.resolve();
@@ -126,7 +146,10 @@
                             log.call(_this);
                         }
                     });
-
+                    this.destroy = () => {
+                        dg.close();
+                        log('已成功销毁该队列项！');
+                    };
                 });
                 obj.name = '新加的高优先级的弹窗';
                 test.reg(obj, 1);
@@ -134,6 +157,21 @@
             });
 
 
+            document.getElementById('btnDestroy').addEventListener('click', () => {
+
+                let cur = test.getCur();
+                if (null == cur) {
+                    log('当前没有正在执行的队列项！');
+                    return;
+                }
+                test.destroy(cur);
+
+            });
+
+            document.getElementById('btnDestroyAll').addEventListener('click', () => {
+                test.clear();
+                log('已销毁整个队列！');
+            });
 
         });
     </script>
