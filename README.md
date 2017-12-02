@@ -11,6 +11,7 @@
 
 - 可自行打包
 - 参见./Build/中的文件
+- npm:[https://www.npmjs.com/package/xpromisequeue](https://www.npmjs.com/package/xpromisequeue)
 
 ## 流程
 
