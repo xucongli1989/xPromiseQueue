@@ -12,6 +12,10 @@
 - 可自行打包
 - 参见./Build/中的文件
 
+## 流程
+
+![](https://raw.githubusercontent.com/xucongli1989/xPromiseQueue/master/workflow.jpg)
+
 ## API
 
 公开的模块内容为`export default { QItem, Queue }`,其中`QItem`是队列中的执行项，`Queue`是队列。
