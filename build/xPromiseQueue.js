@@ -33,9 +33,17 @@ define(["require", "exports"], function (require, exports) {
     class QItem {
         constructor(fun) {
             /**
+             * 名称
+             */
+            this.name = null;
+            /**
              * 该Promise状态
              */
             this.pmsStatus = PromiseStatus.None;
+            /**
+             * 下一个执行项
+             */
+            this.next = null;
             this.run = () => {
                 if (this.pmsStatus != PromiseStatus.None) {
                     return new Promise(() => { });

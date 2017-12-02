@@ -54,7 +54,7 @@ class QItem {
     /**
      * 名称
      */
-    name: string
+    name: string=null
     /**
      * 执行该队列项
      */
@@ -82,7 +82,7 @@ class QItem {
     /**
      * 下一个执行项
      */
-    next: QItem
+    next: QItem=null
     /**
      * 从队列中销毁后需要执行的函数
      */
