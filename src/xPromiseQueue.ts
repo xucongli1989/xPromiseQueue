@@ -31,13 +31,6 @@ enum Priority {
  * 执行项
  */
 class QItem {
-    constructor(fun: () => void) {
-        this._initFun = fun;
-    }
-    /**
-     * 名称
-     */
-    name: string=null
     /**
      * 初始函数
      */
@@ -46,6 +39,19 @@ class QItem {
     private _reject: () => void
     private _pms: Promise<any>
     private _pmsStatus: PromiseStatus = PromiseStatus.None
+
+    constructor(fun: () => void) {
+        this._initFun = fun;
+    }
+    /**
+     * 名称
+     */
+    name: string = null
+
+    /**
+     * 下一个执行项
+     */
+    next: QItem = null
 
     /**
      * 执行该队列项
@@ -89,10 +95,6 @@ class QItem {
     getPmsStatus(): PromiseStatus {
         return this._pmsStatus;
     }
-    /**
-     * 下一个执行项
-     */
-    next: QItem=null
     /**
      * 从队列中销毁后需要执行的函数
      */
@@ -151,10 +153,10 @@ class Queue {
      * @param item 执行项
      * @param priority 优先级（默认为低） 
      */
-    reg(item: QItem, priority: Priority = Priority.Low): this {
+    reg(item: QItem, priority: Priority = Priority.Low): Queue {
 
         if (this._isLock) {
-            return;
+            return this;
         }
 
         //#region 监听状态
@@ -210,16 +212,17 @@ class Queue {
      * 注册唯一的一个队列项。此方法会先销毁整个队列，再重新注册只有一个执行项的队列。注册完后，会锁定此队列。
      * @param item 队列项
      */
-    regUnique(item: QItem): void {
+    regUnique(item: QItem): Queue {
         this.clear();
         this.unLock();
         this.reg(item);
         this.lock();
+        return this;
     }
     /**
      * 运行队列
      */
-    run(): this {
+    run(): Queue {
         if (this._isWatching) return this;
         this._isWatching = true;
         if (this._qList.length === 0) {
@@ -253,23 +256,25 @@ class Queue {
     /**
      * 锁定队列，不允许再注册新项
      */
-    lock(): void {
+    lock(): Queue {
         this._isLock = true;
+        return this;
     }
     /**
      * 解锁队列，允许注册新项
      */
-    unLock(): void {
+    unLock(): Queue {
         this._isLock = false;
+        return this;
     }
     /**
      * 销毁指定队列项
      * 此方法不会去调用该项的解决或拒绝，直接从队列中删除此项
      * @param item 要销毁的队列项
      */
-    destroy(item: QItem): void {
+    destroy(item: QItem): Queue {
         if (null == item || item.isComplete()) {
-            return;
+            return this;
         }
 
         let cur = this.getCur();
@@ -300,11 +305,13 @@ class Queue {
 
         }
 
+        return this;
+
     }
     /**
      * 销毁整个队列
      */
-    clear(): void {
+    clear(): Queue {
         let cur = this.getCur();
         if (cur) {
             cur.next = null;
@@ -313,6 +320,7 @@ class Queue {
         } else {
             this._qList = [];
         }
+        return this;
     }
     /**
      * 判断当前时刻队列是否已全部运行完

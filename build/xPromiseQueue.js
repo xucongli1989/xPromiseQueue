@@ -32,11 +32,11 @@ define(["require", "exports"], function (require, exports) {
      */
     class QItem {
         constructor(fun) {
+            this._pmsStatus = PromiseStatus.None;
             /**
              * 名称
              */
             this.name = null;
-            this._pmsStatus = PromiseStatus.None;
             /**
              * 下一个执行项
              */
@@ -143,7 +143,7 @@ define(["require", "exports"], function (require, exports) {
          */
         reg(item, priority = Priority.Low) {
             if (this._isLock) {
-                return;
+                return this;
             }
             //#region 监听状态
             if (this._isWatching) {
@@ -195,6 +195,7 @@ define(["require", "exports"], function (require, exports) {
             this.unLock();
             this.reg(item);
             this.lock();
+            return this;
         }
         /**
          * 运行队列
@@ -235,12 +236,14 @@ define(["require", "exports"], function (require, exports) {
          */
         lock() {
             this._isLock = true;
+            return this;
         }
         /**
          * 解锁队列，允许注册新项
          */
         unLock() {
             this._isLock = false;
+            return this;
         }
         /**
          * 销毁指定队列项
@@ -249,7 +252,7 @@ define(["require", "exports"], function (require, exports) {
          */
         destroy(item) {
             if (null == item || item.isComplete()) {
-                return;
+                return this;
             }
             let cur = this.getCur();
             for (let i = 0; i < this._qList.length; i++) {
@@ -278,6 +281,7 @@ define(["require", "exports"], function (require, exports) {
                 this._reSortQList();
                 break;
             }
+            return this;
         }
         /**
          * 销毁整个队列
@@ -292,6 +296,7 @@ define(["require", "exports"], function (require, exports) {
             else {
                 this._qList = [];
             }
+            return this;
         }
         /**
          * 判断当前时刻队列是否已全部运行完
