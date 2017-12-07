@@ -47,6 +47,7 @@
             <button id="btnDestroy">销毁正在执行的队列项</button>
             <button id="btnDestroyAll">销毁整个队列</button>
             <button id="btnRegUnique">用新的队列项覆盖现有队列，并锁定此队列</button>
+            <button id="btnComplete">检查队列是否已执行完</button>
         </div>
     </fieldset>
 
@@ -121,7 +122,7 @@
             showQueueLog();
 
             document.getElementById('btnRun').addEventListener('click', () => {
-                if (test.isWatching) {
+                if (test.isWatching()) {
                     log('队列已在运行中，目前正在监听队列状态...');
                 }
                 test.run();
@@ -218,6 +219,16 @@
                 test.regUnique(obj);
                 log('已覆盖整个队列！');
             });
+
+            document.getElementById('btnComplete').addEventListener('click',()=>{
+                let m=test.isComplete();
+                if(m){
+                    log('已执行完！');
+                }else{
+                    log('未执行完！');
+                }
+            });
+
         });
     </script>
 

@@ -36,46 +36,66 @@ define(["require", "exports"], function (require, exports) {
              * 名称
              */
             this.name = null;
-            /**
-             * 该Promise状态
-             */
-            this.pmsStatus = PromiseStatus.None;
+            this._pmsStatus = PromiseStatus.None;
             /**
              * 下一个执行项
              */
             this.next = null;
-            this.run = () => {
-                if (this.pmsStatus != PromiseStatus.None) {
-                    return new Promise(() => { });
+            this._initFun = fun;
+        }
+        /**
+         * 执行该队列项
+         */
+        run() {
+            if (this._pms) {
+                return this._pms;
+            }
+            this._pmsStatus = PromiseStatus.Pending;
+            this._pms = new Promise((rs, rj) => {
+                this._resolve = rs;
+                this._reject = rj;
+                this._initFun.call(this);
+            }).then(() => {
+                if (!this.next) {
+                    return {};
                 }
-                this.pmsStatus = PromiseStatus.Pending;
-                return new Promise((rs, rj) => {
-                    this._resolve = rs;
-                    this._reject = rj;
-                    fun.call(this);
-                }).then(() => {
-                    if (!this.next) {
-                        return {};
-                    }
-                    return this.next.run();
-                }).catch(() => {
-                    this.pmsStatus = PromiseStatus.Rejected;
-                });
-            };
+                return this.next.run();
+            }).catch(() => {
+                this._pmsStatus = PromiseStatus.Rejected;
+            });
+            return this._pms;
         }
         /**
          * resolve
          */
         resolve() {
             this._resolve.apply(this, arguments);
-            this.pmsStatus = PromiseStatus.Fulfilled;
+            this._pmsStatus = PromiseStatus.Fulfilled;
         }
         /**
          * reject
          */
         reject() {
             this._reject.apply(this, arguments);
-            this.pmsStatus = PromiseStatus.Rejected;
+            this._pmsStatus = PromiseStatus.Rejected;
+        }
+        /**
+         * 获取该Promise状态
+         */
+        getPmsStatus() {
+            return this._pmsStatus;
+        }
+        /**
+         * 是否已完成（已解决或已拒绝）
+         */
+        isComplete() {
+            return this._pmsStatus == PromiseStatus.Fulfilled || this._pmsStatus == PromiseStatus.Rejected;
+        }
+        /**
+         * 是否在处理中（Pending）
+         */
+        isPending() {
+            return this._pmsStatus == PromiseStatus.Pending;
         }
     }
     /**
@@ -86,31 +106,31 @@ define(["require", "exports"], function (require, exports) {
             /**
              * 是否为监听中
              */
-            this.isWatching = false;
+            this._isWatching = false;
             /**
              * 当前队列是否已锁定（true:不允许再注册新的执行项）
              */
-            this.isLock = false;
+            this._isLock = false;
             /**
              * 待执行的Promise队列
              */
-            this.qList = [];
+            this._qList = [];
         }
         /**
          * 将当前队列中的每一项按实际执行顺序重新排列
          */
-        reSortQList() {
-            let first = this.qList[0];
+        _reSortQList() {
+            let first = this._qList[0];
             if (!first)
                 return;
             let start = null;
-            this.qList = [];
+            this._qList = [];
             let fun = (m) => {
-                if (!start && (m.pmsStatus == PromiseStatus.None || m.pmsStatus == PromiseStatus.Pending)) {
+                if (!start && !m.isComplete()) {
                     start = m;
                 }
                 if (start) {
-                    this.qList.push(m);
+                    this._qList.push(m);
                 }
                 m.next && fun(m.next);
             };
@@ -122,16 +142,16 @@ define(["require", "exports"], function (require, exports) {
          * @param priority 优先级（默认为低）
          */
         reg(item, priority = Priority.Low) {
-            if (this.isLock) {
+            if (this._isLock) {
                 return;
             }
             //#region 监听状态
-            if (this.isWatching) {
+            if (this._isWatching) {
                 let cur = this.getCur();
                 //队列全部执行完毕
                 if (!cur) {
-                    this.qList = [item];
-                    this.isWatching = false;
+                    this._qList = [item];
+                    this._isWatching = false;
                     this.run();
                     return this;
                 }
@@ -142,27 +162,27 @@ define(["require", "exports"], function (require, exports) {
                 }
                 else {
                     //低优先级
-                    this.qList[this.qList.length - 1].next = item;
+                    this._qList[this._qList.length - 1].next = item;
                 }
                 //重排序
-                this.reSortQList();
+                this._reSortQList();
                 return this;
             }
             //#endregion
             //#region 初始化状态
-            if (this.qList.length == 0) {
-                this.qList = [item];
+            if (this._qList.length == 0) {
+                this._qList = [item];
                 return this;
             }
             //高优先级
             if (priority == Priority.High) {
-                item.next = this.qList[0];
-                this.qList.unshift(item);
+                item.next = this._qList[0];
+                this._qList.unshift(item);
                 return this;
             }
             //低优先级
-            this.qList[this.qList.length - 1].next = item;
-            this.qList.push(item);
+            this._qList[this._qList.length - 1].next = item;
+            this._qList.push(item);
             //#endregion
             return this;
         }
@@ -180,47 +200,47 @@ define(["require", "exports"], function (require, exports) {
          * 运行队列
          */
         run() {
-            if (this.isWatching)
+            if (this._isWatching)
                 return this;
-            this.isWatching = true;
-            if (this.qList.length === 0) {
+            this._isWatching = true;
+            if (this._qList.length === 0) {
                 return this;
             }
-            this.qList[0].run();
+            this._qList[0].run();
             return this;
         }
         /**
          * 获取当前正在执行中的队列项（运行时，队列中第一个状态为Pending的项）
          */
         getCur() {
-            if (!this.isWatching) {
+            if (!this._isWatching) {
                 return null;
             }
-            if (this.qList.length == 0)
+            if (this._qList.length == 0)
                 return null;
             let c;
             let fun = (m) => {
-                if (m.pmsStatus == PromiseStatus.Pending) {
+                if (m.isPending()) {
                     c = m;
                 }
                 else {
                     m.next && fun(m.next);
                 }
             };
-            fun(this.qList[0]);
+            fun(this._qList[0]);
             return c;
         }
         /**
-         * 锁定队列
+         * 锁定队列，不允许再注册新项
          */
         lock() {
-            this.isLock = true;
+            this._isLock = true;
         }
         /**
-         * 解锁队列
+         * 解锁队列，允许注册新项
          */
         unLock() {
-            this.isLock = false;
+            this._isLock = false;
         }
         /**
          * 销毁指定队列项
@@ -228,25 +248,25 @@ define(["require", "exports"], function (require, exports) {
          * @param item 要销毁的队列项
          */
         destroy(item) {
-            if (null == item || item.pmsStatus == PromiseStatus.Fulfilled || item.pmsStatus == PromiseStatus.Rejected) {
+            if (null == item || item.isComplete()) {
                 return;
             }
             let cur = this.getCur();
-            for (let i = 0; i < this.qList.length; i++) {
-                if (this.qList[i] != item) {
+            for (let i = 0; i < this._qList.length; i++) {
+                if (this._qList[i] != item) {
                     continue;
                 }
                 if (i == 0) {
                     //第一项
-                    this.qList.shift();
+                    this._qList.shift();
                 }
-                else if (i == this.qList.length - 1) {
+                else if (i == this._qList.length - 1) {
                     //最后一项
-                    this.qList[i - 1].next = null;
+                    this._qList[i - 1].next = null;
                 }
                 else {
                     //中间项
-                    this.qList[i - 1].next = item.next;
+                    this._qList[i - 1].next = item.next;
                 }
                 if (this.isWatching) {
                     if (cur === item) {
@@ -255,7 +275,7 @@ define(["require", "exports"], function (require, exports) {
                         item.next && item.next.run();
                     }
                 }
-                this.reSortQList();
+                this._reSortQList();
                 break;
             }
         }
@@ -266,12 +286,27 @@ define(["require", "exports"], function (require, exports) {
             let cur = this.getCur();
             if (cur) {
                 cur.next = null;
-                this.qList = [cur];
+                this._qList = [cur];
                 this.destroy(cur);
             }
             else {
-                this.qList = [];
+                this._qList = [];
             }
+        }
+        /**
+         * 判断当前时刻队列是否已全部运行完
+         */
+        isComplete() {
+            if (this._qList.length == 0) {
+                return true;
+            }
+            return this._qList[this._qList.length - 1].isComplete();
+        }
+        /**
+         * 是否为监听中
+         */
+        isWatching() {
+            return this._isWatching;
         }
     }
     exports.default = { QItem, Queue };

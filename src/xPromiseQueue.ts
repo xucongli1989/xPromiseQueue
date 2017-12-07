@@ -32,53 +32,63 @@ enum Priority {
  */
 class QItem {
     constructor(fun: () => void) {
-        this.run = () => {
-            if (this.pmsStatus != PromiseStatus.None) {
-                return new Promise(() => { });
-            }
-            this.pmsStatus = PromiseStatus.Pending;
-            return new Promise((rs: any, rj: any) => {
-                this._resolve = rs;
-                this._reject = rj;
-                fun.call(this);
-            }).then(() => {
-                if (!this.next) {
-                    return {};
-                }
-                return this.next.run();
-            }).catch(() => {
-                this.pmsStatus = PromiseStatus.Rejected;
-            });
-        };
+        this._initFun = fun;
     }
     /**
      * 名称
      */
     name: string=null
     /**
-     * 执行该队列项
+     * 初始函数
      */
-    run: () => Promise<any>
+    private _initFun: () => void
     private _resolve: () => void
     private _reject: () => void
+    private _pms: Promise<any>
+    private _pmsStatus: PromiseStatus = PromiseStatus.None
+
+    /**
+     * 执行该队列项
+     */
+    run(): Promise<any> {
+        if (this._pms) {
+            return this._pms;
+        }
+        this._pmsStatus = PromiseStatus.Pending;
+        this._pms = new Promise((rs: any, rj: any) => {
+            this._resolve = rs;
+            this._reject = rj;
+            this._initFun.call(this);
+        }).then(() => {
+            if (!this.next) {
+                return {};
+            }
+            return this.next.run();
+        }).catch(() => {
+            this._pmsStatus = PromiseStatus.Rejected;
+        });
+        return this._pms;
+    }
     /**
      * resolve
      */
     resolve(): void {
         this._resolve.apply(this, arguments);
-        this.pmsStatus = PromiseStatus.Fulfilled;
+        this._pmsStatus = PromiseStatus.Fulfilled;
     }
     /**
      * reject
      */
     reject(): void {
         this._reject.apply(this, arguments);
-        this.pmsStatus = PromiseStatus.Rejected;
+        this._pmsStatus = PromiseStatus.Rejected;
     }
     /**
-     * 该Promise状态
+     * 获取该Promise状态
      */
-    pmsStatus: PromiseStatus = PromiseStatus.None
+    getPmsStatus(): PromiseStatus {
+        return this._pmsStatus;
+    }
     /**
      * 下一个执行项
      */
@@ -87,6 +97,18 @@ class QItem {
      * 从队列中销毁后需要执行的函数
      */
     destroyCallback: () => void
+    /**
+     * 是否已完成（已解决或已拒绝）
+     */
+    isComplete(): boolean {
+        return this._pmsStatus == PromiseStatus.Fulfilled || this._pmsStatus == PromiseStatus.Rejected;
+    }
+    /**
+     * 是否在处理中（Pending）
+     */
+    isPending(): boolean {
+        return this._pmsStatus == PromiseStatus.Pending;
+    }
 }
 
 /**
@@ -96,29 +118,29 @@ class Queue {
     /**
      * 是否为监听中
      */
-    isWatching: boolean = false
+    private _isWatching: boolean = false
     /**
      * 当前队列是否已锁定（true:不允许再注册新的执行项）
      */
-    private isLock: boolean = false
+    private _isLock: boolean = false
     /**
      * 待执行的Promise队列
      */
-    private qList: Array<QItem> = []
+    private _qList: Array<QItem> = []
     /**
      * 将当前队列中的每一项按实际执行顺序重新排列
      */
-    private reSortQList(): void {
-        let first = this.qList[0];
+    private _reSortQList(): void {
+        let first = this._qList[0];
         if (!first) return;
         let start: QItem = null;
-        this.qList = [];
+        this._qList = [];
         let fun = (m: QItem) => {
-            if (!start && (m.pmsStatus == PromiseStatus.None || m.pmsStatus == PromiseStatus.Pending)) {
+            if (!start && !m.isComplete()) {
                 start = m;
             }
             if (start) {
-                this.qList.push(m);
+                this._qList.push(m);
             }
             m.next && fun(m.next);
         };
@@ -131,18 +153,18 @@ class Queue {
      */
     reg(item: QItem, priority: Priority = Priority.Low): this {
 
-        if (this.isLock) {
+        if (this._isLock) {
             return;
         }
 
         //#region 监听状态
-        if (this.isWatching) {
+        if (this._isWatching) {
             let cur = this.getCur();
 
             //队列全部执行完毕
             if (!cur) {
-                this.qList = [item];
-                this.isWatching = false;
+                this._qList = [item];
+                this._isWatching = false;
                 this.run();
                 return this;
             }
@@ -153,32 +175,32 @@ class Queue {
                 cur.next = item;
             } else {
                 //低优先级
-                this.qList[this.qList.length - 1].next = item;
+                this._qList[this._qList.length - 1].next = item;
             }
 
             //重排序
-            this.reSortQList();
+            this._reSortQList();
 
             return this;
         }
         //#endregion
 
         //#region 初始化状态
-        if (this.qList.length == 0) {
-            this.qList = [item];
+        if (this._qList.length == 0) {
+            this._qList = [item];
             return this;
         }
 
         //高优先级
         if (priority == Priority.High) {
-            item.next = this.qList[0];
-            this.qList.unshift(item);
+            item.next = this._qList[0];
+            this._qList.unshift(item);
             return this;
         }
 
         //低优先级
-        this.qList[this.qList.length - 1].next = item;
-        this.qList.push(item);
+        this._qList[this._qList.length - 1].next = item;
+        this._qList.push(item);
 
         //#endregion
 
@@ -198,47 +220,47 @@ class Queue {
      * 运行队列
      */
     run(): this {
-        if (this.isWatching) return this;
-        this.isWatching = true;
-        if (this.qList.length === 0) {
+        if (this._isWatching) return this;
+        this._isWatching = true;
+        if (this._qList.length === 0) {
             return this;
         }
-        this.qList[0].run();
+        this._qList[0].run();
         return this;
     }
     /**
      * 获取当前正在执行中的队列项（运行时，队列中第一个状态为Pending的项）
      */
     getCur(): QItem {
-        if (!this.isWatching) {
+        if (!this._isWatching) {
             return null;
         }
 
-        if (this.qList.length == 0) return null;
+        if (this._qList.length == 0) return null;
 
         let c: QItem;
         let fun = (m: QItem) => {
-            if (m.pmsStatus == PromiseStatus.Pending) {
+            if (m.isPending()) {
                 c = m;
             } else {
                 m.next && fun(m.next);
             }
         };
-        fun(this.qList[0]);
+        fun(this._qList[0]);
 
         return c;
     }
     /**
-     * 锁定队列
+     * 锁定队列，不允许再注册新项
      */
     lock(): void {
-        this.isLock = true;
+        this._isLock = true;
     }
     /**
-     * 解锁队列
+     * 解锁队列，允许注册新项
      */
     unLock(): void {
-        this.isLock = false;
+        this._isLock = false;
     }
     /**
      * 销毁指定队列项
@@ -246,25 +268,25 @@ class Queue {
      * @param item 要销毁的队列项
      */
     destroy(item: QItem): void {
-        if (null == item || item.pmsStatus == PromiseStatus.Fulfilled || item.pmsStatus == PromiseStatus.Rejected) {
+        if (null == item || item.isComplete()) {
             return;
         }
 
         let cur = this.getCur();
 
-        for (let i = 0; i < this.qList.length; i++) {
-            if (this.qList[i] != item) {
+        for (let i = 0; i < this._qList.length; i++) {
+            if (this._qList[i] != item) {
                 continue;
             }
             if (i == 0) {
                 //第一项
-                this.qList.shift();
-            } else if (i == this.qList.length - 1) {
+                this._qList.shift();
+            } else if (i == this._qList.length - 1) {
                 //最后一项
-                this.qList[i - 1].next = null;
+                this._qList[i - 1].next = null;
             } else {
                 //中间项
-                this.qList[i - 1].next = item.next;
+                this._qList[i - 1].next = item.next;
             }
             if (this.isWatching) {
                 if (cur === item) {
@@ -273,7 +295,7 @@ class Queue {
                     item.next && item.next.run();
                 }
             }
-            this.reSortQList();
+            this._reSortQList();
             break;
 
         }
@@ -286,11 +308,26 @@ class Queue {
         let cur = this.getCur();
         if (cur) {
             cur.next = null;
-            this.qList = [cur];
+            this._qList = [cur];
             this.destroy(cur);
         } else {
-            this.qList = [];
+            this._qList = [];
         }
+    }
+    /**
+     * 判断当前时刻队列是否已全部运行完
+     */
+    isComplete(): boolean {
+        if (this._qList.length == 0) {
+            return true;
+        }
+        return this._qList[this._qList.length - 1].isComplete();
+    }
+    /**
+     * 是否为监听中
+     */
+    isWatching(): boolean {
+        return this._isWatching;
     }
 }
 
