@@ -94,6 +94,13 @@
 <td>boolean</td>
 <td>是否在处理中（Pending）</td>
 </tr>
+<tr>
+<td>isRejected</td>
+<td>function</td>
+<td></td>
+<td>boolean</td>
+<td>是否已拒绝（Rejected）</td>
+</tr>
 </table>
 
 

@@ -76,13 +76,13 @@
             obj = new QItem(function () {
                 let _this = this;
                 let dg = art.dialog({
-                    content: '我是一个默认弹窗哦，快点下面的按钮',
+                    content: '我是一个默认弹窗哦，快点下面的按钮<br/>注：如果<strong>取消本弹窗</strong>，则不再往后执行其它队列项！',
                     ok: function () {
                         _this.resolve();
                         log.call(_this);
                     },
                     cancel: function () {
-                        _this.resolve();
+                        _this.reject();
                         log.call(_this);
                     }
                 });
@@ -220,11 +220,11 @@
                 log('已覆盖整个队列！');
             });
 
-            document.getElementById('btnComplete').addEventListener('click',()=>{
-                let m=test.isComplete();
-                if(m){
+            document.getElementById('btnComplete').addEventListener('click', () => {
+                let m = test.isComplete();
+                if (m) {
                     log('已执行完！');
-                }else{
+                } else {
                     log('未执行完！');
                 }
             });

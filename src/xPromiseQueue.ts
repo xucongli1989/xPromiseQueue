@@ -70,6 +70,8 @@ class QItem {
                 return {};
             }
             return this.next.run();
+        }, () => {
+            this.next = null;
         }).catch(() => {
             this._pmsStatus = PromiseStatus.Rejected;
         });
@@ -110,6 +112,12 @@ class QItem {
      */
     isPending(): boolean {
         return this._pmsStatus == PromiseStatus.Pending;
+    }
+    /**
+     * 是否已拒绝（Rejected）
+     */
+    isRejected(): boolean {
+        return this._pmsStatus == PromiseStatus.Rejected;
     }
 }
 
@@ -329,7 +337,17 @@ class Queue {
         if (this._qList.length == 0) {
             return true;
         }
-        return this._qList[this._qList.length - 1].isComplete();
+        let isDone = true;
+        for (let m of this._qList) {
+            if (m.isRejected()) {
+                break;
+            }
+            if (!m.isComplete()) {
+                isDone = false;
+                break;
+            }
+        }
+        return isDone;
     }
     /**
      * 是否为监听中
