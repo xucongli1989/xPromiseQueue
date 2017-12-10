@@ -1,6 +1,6 @@
 {
   "name": "xpromisequeue",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "这是一个Javascript Promise的执行队列模块，里面的每一个Promise都是按顺序执行的，您也可以指定一定的优先级来决定队列的执行顺序。",
   "main": "./build/xPromiseQueue.js",
   "scripts": {

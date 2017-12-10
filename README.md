@@ -46,6 +46,13 @@
 <td>下一个执行项</td>
 </tr>
 <tr>
+<td>queuePromiseContext</td>
+<td>QueuePromiseContext</td>
+<td>null</td>
+<td></td>
+<td>队列Promise上下文</td>
+</tr>
+<tr>
 <td>run</td>
 <td>function</td>
 <td></td>
@@ -183,6 +190,13 @@
 <td></td>
 <td>boolean</td>
 <td>是否为监听中（也就是是否调用了该对象的run）</td>
+</tr>
+<tr>
+<td>getCurPms</td>
+<td>function</td>
+<td></td>
+<td>Promise</td>
+<td>获取当前时刻表示整个队列是否完成的Promise对象</td>
 </tr>
 </table>
 

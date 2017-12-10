@@ -27,6 +27,16 @@ define(["require", "exports"], function (require, exports) {
         Priority[Priority["Low"] = 0] = "Low";
         Priority[Priority["High"] = 1] = "High";
     })(Priority || (Priority = {}));
+    class QueuePromiseContext {
+        constructor() {
+            this.init();
+        }
+        init() {
+            this.queuePms = new Promise((r, j) => {
+                this.resolve = r;
+            });
+        }
+    }
     /**
      * 执行项
      */
@@ -41,6 +51,10 @@ define(["require", "exports"], function (require, exports) {
              * 下一个执行项
              */
             this.next = null;
+            /**
+            * 队列Promise上下文
+            */
+            this.queuePromiseContext = null;
             this._initFun = fun;
         }
         /**
@@ -64,6 +78,10 @@ define(["require", "exports"], function (require, exports) {
                 this.next = null;
             }).catch(() => {
                 this._pmsStatus = PromiseStatus.Rejected;
+            }).then(() => {
+                if (null == this.next) {
+                    this.queuePromiseContext.resolve();
+                }
             });
             return this._pms;
         }
@@ -111,6 +129,7 @@ define(["require", "exports"], function (require, exports) {
      */
     class Queue {
         constructor() {
+            this._promiseContext = new QueuePromiseContext();
             /**
              * 是否为监听中
              */
@@ -153,6 +172,7 @@ define(["require", "exports"], function (require, exports) {
             if (this._isLock) {
                 return this;
             }
+            item.queuePromiseContext = this._promiseContext;
             //#region 监听状态
             if (this._isWatching) {
                 let cur = this.getCur();
@@ -330,6 +350,16 @@ define(["require", "exports"], function (require, exports) {
          */
         isWatching() {
             return this._isWatching;
+        }
+        /**
+         * 获取当前时刻表示整个队列是否完成的Promise对象
+         */
+        getCurPms() {
+            this._promiseContext.init();
+            if (this.isComplete()) {
+                this._promiseContext.resolve();
+            }
+            return this._promiseContext.queuePms;
         }
     }
     exports.default = { QItem, Queue };

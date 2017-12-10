@@ -41,13 +41,17 @@
             <p>
                 注：初始队列中已包含两个默认的执行项。
             </p>
-            <button id="btnRun">运行队列</button>
+            <button id="btnRun" style="color:#f00;">运行队列</button>
             <button id="btnAdd">追加一项任务至目前队列中</button>
             <button id="btnAddFirst">追加一项高优先级的任务至目前队列中</button>
             <button id="btnDestroy">销毁正在执行的队列项</button>
             <button id="btnDestroyAll">销毁整个队列</button>
+
+            <br/><br/>
+
             <button id="btnRegUnique">用新的队列项覆盖现有队列，并锁定此队列</button>
             <button id="btnComplete">检查队列是否已执行完</button>
+            <button id="btnGetCurPromise">设置一个表示当前时刻整个队列执行结束后的回调</button>
         </div>
     </fieldset>
 
@@ -227,6 +231,12 @@
                 } else {
                     log('未执行完！');
                 }
+            });
+
+            document.getElementById('btnGetCurPromise').addEventListener('click', () => {
+                test.getCurPms().then(() => {
+                    alert('这是当前时刻整个队列执行结束后的回调！');
+                });
             });
 
         });

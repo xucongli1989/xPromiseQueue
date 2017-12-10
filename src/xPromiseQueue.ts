@@ -1,4 +1,3 @@
-
 /**
  * ******************************************************************************************
  * 开源协议：https://github.com/xucongli1989/xPromiseQueue/blob/master/LICENSE
@@ -26,6 +25,18 @@ enum Priority {
     High
 }
 
+class QueuePromiseContext {
+    constructor() {
+        this.init();
+    }
+    queuePms: Promise<any>
+    resolve: () => void
+    init(): void {
+        this.queuePms = new Promise((r, j) => {
+            this.resolve = r;
+        });
+    }
+}
 
 /**
  * 执行项
@@ -54,6 +65,11 @@ class QItem {
     next: QItem = null
 
     /**
+    * 队列Promise上下文
+    */
+    queuePromiseContext: QueuePromiseContext = null
+
+    /**
      * 执行该队列项
      */
     run(): Promise<any> {
@@ -74,6 +90,10 @@ class QItem {
             this.next = null;
         }).catch(() => {
             this._pmsStatus = PromiseStatus.Rejected;
+        }).then(() => {
+            if (null == this.next) {
+                this.queuePromiseContext.resolve();
+            }
         });
         return this._pms;
     }
@@ -125,6 +145,7 @@ class QItem {
  * 模块主体
  */
 class Queue {
+    private _promiseContext: QueuePromiseContext = new QueuePromiseContext()
     /**
      * 是否为监听中
      */
@@ -159,13 +180,14 @@ class Queue {
     /**
      * 注册一个Promise项到执行队列中
      * @param item 执行项
-     * @param priority 优先级（默认为低） 
+     * @param priority 优先级（默认为低）
      */
     reg(item: QItem, priority: Priority = Priority.Low): Queue {
-
         if (this._isLock) {
             return this;
         }
+
+        item.queuePromiseContext = this._promiseContext;
 
         //#region 监听状态
         if (this._isWatching) {
@@ -310,11 +332,9 @@ class Queue {
             }
             this._reSortQList();
             break;
-
         }
 
         return this;
-
     }
     /**
      * 销毁整个队列
@@ -354,6 +374,16 @@ class Queue {
      */
     isWatching(): boolean {
         return this._isWatching;
+    }
+    /**
+     * 获取当前时刻表示整个队列是否完成的Promise对象
+     */
+    getCurPms(): Promise<any> {
+        this._promiseContext.init();
+        if (this.isComplete()) {
+            this._promiseContext.resolve();
+        }
+        return this._promiseContext.queuePms;
     }
 }
 
