@@ -22,7 +22,8 @@ enum PromiseStatus {
  */
 enum Priority {
     Low,
-    High
+    High,
+    Highest
 }
 
 class QueuePromiseContext {
@@ -38,6 +39,13 @@ class QueuePromiseContext {
     }
 }
 
+class QItemInitOptions {
+    /**
+    * 初始化Promise时需要执行的函数
+    */
+    initFun: () => void
+}
+
 /**
  * 执行项
  */
@@ -45,15 +53,24 @@ class QItem {
     /**
      * 初始函数
      */
-    private _initFun: () => void
     private _resolve: () => void
     private _reject: () => void
     private _pms: Promise<any>
     private _pmsStatus: PromiseStatus = PromiseStatus.None
 
     constructor(fun: () => void) {
-        this._initFun = fun;
+        this.initOptions.initFun = fun;
     }
+
+    /**
+    * 初始化时的选项
+    */
+    initOptions: QItemInitOptions = new QItemInitOptions()
+
+    /**
+    * 唯一标识
+    */
+    id: string = null
     /**
      * 名称
      */
@@ -80,7 +97,7 @@ class QItem {
         this._pms = new Promise((rs: any, rj: any) => {
             this._resolve = rs;
             this._reject = rj;
-            this._initFun.call(this);
+            this.initOptions.initFun.call(this);
         }).then(() => {
             if (!this.next) {
                 return {};
@@ -139,6 +156,19 @@ class QItem {
     isRejected(): boolean {
         return this._pmsStatus == PromiseStatus.Rejected;
     }
+    /**
+     * clone队列项
+     */
+    clone(): QItem {
+        let q = new QItem(this.initOptions.initFun);
+        q.destroyCallback = this.destroyCallback;
+        q.id = this.id;
+        q.initOptions = this.initOptions;
+        q.name = this.name;
+        q.next = this.next;
+        q.queuePromiseContext = this.queuePromiseContext;
+        return q;
+    }
 }
 
 /**
@@ -178,9 +208,11 @@ class Queue {
         fun(first);
     }
     /**
-     * 注册一个Promise项到执行队列中
+     * 注册一个Promise项到执行队列中。
+     * 如果当前队列未运行，则仅仅是将该项添加至队列中而已。
+     * 如果当前队列处于运行中，则不仅仅是将该项添加到队列中，还会根据该项实际所在的位置来判断是否立刻运行此项。
      * @param item 执行项
-     * @param priority 优先级（默认为低）
+     * @param priority 优先级（默认为低。【低】：添加到队列的末尾；【高】：添加到紧挨着当前正在执行的队列项的后面；【最高】：添加到当前正在执行的队列项的前面）
      */
     reg(item: QItem, priority: Priority = Priority.Low): Queue {
         if (this._isLock) {
@@ -201,13 +233,35 @@ class Queue {
                 return this;
             }
 
-            //高优先级
-            if (priority == Priority.High) {
-                item.next = cur.next;
-                cur.next = item;
-            } else {
-                //低优先级
-                this._qList[this._qList.length - 1].next = item;
+            switch (priority) {
+                case Priority.High:
+                    //高优先级
+                    item.next = cur.next;
+                    cur.next = item;
+                    break;
+                case Priority.Highest:
+                    //最高优先级
+                    for (let i = 0; i < this._qList.length; i++) {
+                        let m = this._qList[i];
+                        if (m != cur) {
+                            continue;
+                        }
+                        cur.destroyCallback && cur.destroyCallback();
+                        item.next = cur.clone();
+                        if (i == 0) {
+                            //当前项为第一项
+                            this._qList.splice(0, 0, item);
+                            break;
+                        } else {
+                            //当前项为中间项
+                            this._qList[i - 1].next = item;
+                        }
+                    }
+                    break;
+                default:
+                    //低优先级
+                    this._qList[this._qList.length - 1].next = item;
+                    break;
             }
 
             //重排序
@@ -224,7 +278,7 @@ class Queue {
         }
 
         //高优先级
-        if (priority == Priority.High) {
+        if (priority == Priority.High || priority == Priority.Highest) {
             item.next = this._qList[0];
             this._qList.unshift(item);
             return this;
@@ -249,6 +303,52 @@ class Queue {
         this.lock();
         return this;
     }
+
+    /**
+     * 注册一个新的队列项到一个已有且未完成的队列项的后面
+     * @param parent 已有的未完成的队列项
+     * @param newItem 此次新加的队列项（parent执行完后，才会执行newItem）
+     */
+    regAfter(parent: QItem, newItem: QItem): Queue {
+        if (!parent || parent.isComplete() || !newItem) {
+            return this;
+        }
+        newItem.next = parent.next;
+        parent.next = newItem;
+        this._reSortQList();
+        return this;
+    }
+
+    /**
+     * 注册一个新的队列项到一个已有且未完成的队列项的前面
+     * @param lastItem 已有的未完成的队列项
+     * @param newItem 此次新加的队列项（newItem执行完后，才会执行lastItem）
+     */
+    regBefore(lastItem: QItem, newItem: QItem): Queue {
+        if (!lastItem || lastItem.isComplete() || !newItem) {
+            return this;
+        }
+
+        //lastItem是当前项或第一项
+        if (lastItem == this.getCur() || this._qList[0] == lastItem) {
+            this.reg(newItem, Priority.Highest);
+            return this;
+        }
+
+        //lastItem非当前项，也非第一项
+        for (let i = 0; i < this._qList.length; i++) {
+            let m = this._qList[i];
+            if (m.next != lastItem) {
+                continue;
+            }
+            newItem.next = lastItem;
+            m.next = newItem;
+        }
+
+        this._reSortQList();
+        return this;
+    }
+
     /**
      * 运行队列
      */
@@ -384,6 +484,22 @@ class Queue {
             this._promiseContext.resolve();
         }
         return this._promiseContext.queuePms;
+    }
+
+    /**
+     * 根据队列项的id查找队列项
+     * @param id 队列项的id
+     */
+    getQItemById(id: string): QItem {
+        if (!id) {
+            return null;
+        }
+        for (let m of this._qList) {
+            if (m.id == id) {
+                return m;
+            }
+        }
+        return null;
     }
 }
 
