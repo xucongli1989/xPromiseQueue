@@ -295,8 +295,12 @@ class Queue {
     /**
      * 注册唯一的一个队列项。此方法会先销毁整个队列，再重新注册只有一个执行项的队列。注册完后，会锁定此队列。
      * @param item 队列项
+     * @param isForce 是否绕过队列锁定并强制注册（默认为true）
      */
-    regUnique(item: QItem): Queue {
+    regUnique(item: QItem, isForce: Boolean = true): Queue {
+        if (!isForce && this._isLock) {
+            return this;
+        }
         this.clear();
         this.unLock();
         this.reg(item);
@@ -310,6 +314,10 @@ class Queue {
      * @param newItem 此次新加的队列项（parent执行完后，才会执行newItem）
      */
     regAfter(parent: QItem, newItem: QItem): Queue {
+        if (this._isLock) {
+            return this;
+        }
+
         if (!parent || parent.isComplete() || !newItem) {
             return this;
         }
@@ -325,6 +333,10 @@ class Queue {
      * @param newItem 此次新加的队列项（newItem执行完后，才会执行lastItem）
      */
     regBefore(lastItem: QItem, newItem: QItem): Queue {
+        if (this._isLock) {
+            return this;
+        }
+
         if (!lastItem || lastItem.isComplete() || !newItem) {
             return this;
         }

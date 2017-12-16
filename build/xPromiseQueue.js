@@ -265,8 +265,12 @@ define(["require", "exports"], function (require, exports) {
         /**
          * 注册唯一的一个队列项。此方法会先销毁整个队列，再重新注册只有一个执行项的队列。注册完后，会锁定此队列。
          * @param item 队列项
+         * @param isForce 是否绕过队列锁定并强制注册（默认为true）
          */
-        regUnique(item) {
+        regUnique(item, isForce = true) {
+            if (!isForce && this._isLock) {
+                return this;
+            }
             this.clear();
             this.unLock();
             this.reg(item);
@@ -279,6 +283,9 @@ define(["require", "exports"], function (require, exports) {
          * @param newItem 此次新加的队列项（parent执行完后，才会执行newItem）
          */
         regAfter(parent, newItem) {
+            if (this._isLock) {
+                return this;
+            }
             if (!parent || parent.isComplete() || !newItem) {
                 return this;
             }
@@ -293,6 +300,9 @@ define(["require", "exports"], function (require, exports) {
          * @param newItem 此次新加的队列项（newItem执行完后，才会执行lastItem）
          */
         regBefore(lastItem, newItem) {
+            if (this._isLock) {
+                return this;
+            }
             if (!lastItem || lastItem.isComplete() || !newItem) {
                 return this;
             }
