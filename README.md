@@ -32,6 +32,20 @@
 <th>说明</th>
 </tr>
 <tr>
+<td>initOptions</td>
+<td>QItemInitOptions</td>
+<td>new QItemInitOptions()</td>
+<td></td>
+<td>初始化时的选项</td>
+</tr>
+<tr>
+<td>id</td>
+<td>string</td>
+<td>null</td>
+<td></td>
+<td>唯一标识</td>
+</tr>
+<tr>
 <td>name</td>
 <td>string</td>
 <td>null</td>
@@ -108,6 +122,13 @@
 <td>boolean</td>
 <td>是否已拒绝（Rejected）</td>
 </tr>
+<tr>
+<td>clone</td>
+<td>function</td>
+<td></td>
+<td>QItem</td>
+<td>clone队列项</td>
+</tr>
 </table>
 
 
@@ -126,7 +147,12 @@
 <td>function</td>
 <td></td>
 <td>Queue</td>
-<td>注册一个Promise项到执行队列中。`priority`为优先级，0为低优先级（默认），1为高优先级。当指定高优先级时，则当前Promise执行完后就立即开始执行该任务。</td>
+<td>
+注册一个Promise项到执行队列中。
+如果当前队列未运行，则仅仅是将该项添加至队列中而已。
+如果当前队列处于运行中，则不仅仅是将该项添加到队列中，还会根据该项实际所在的位置来判断是否立刻运行此项。
+优先级（默认为低。【低】：添加到队列的末尾；【高】：添加到紧挨着当前正在执行的队列项的后面；【最高】：添加到当前正在执行的队列项的前面）
+</td>
 </tr>
 <tr>
 <td>regUnique</td>
@@ -134,6 +160,22 @@
 <td></td>
 <td>Queue</td>
 <td>注册唯一的一个队列项。此方法会先销毁整个队列，再重新注册只有一个执行项的队列。注册完后，会锁定此队列。</td>
+</tr>
+<tr>
+<tr>
+<td>regAfter</td>
+<td>function</td>
+<td></td>
+<td>Queue</td>
+<td>注册一个新的队列项到一个已有且未完成的队列项的后面</td>
+</tr>
+<tr>
+<tr>
+<td>regBefore</td>
+<td>function</td>
+<td></td>
+<td>Queue</td>
+<td>注册一个新的队列项到一个已有且未完成的队列项的前面</td>
 </tr>
 <tr>
 <td>run</td>
@@ -154,14 +196,14 @@
 <td>function</td>
 <td></td>
 <td>Queue</td>
-<td>锁定队列</td>
+<td>锁定队列，不允许再修改队列</td>
 </tr>
 <tr>
 <td>unLock</td>
 <td>function</td>
 <td></td>
 <td>Queue</td>
-<td>解锁队列</td>
+<td>解锁队列，允许修改队列</td>
 </tr>
 <tr>
 <td>destroy</td>
@@ -197,6 +239,13 @@
 <td></td>
 <td>Promise</td>
 <td>获取当前时刻表示整个队列是否完成的Promise对象</td>
+</tr>
+<tr>
+<td>getQItemById</td>
+<td>function</td>
+<td></td>
+<td>QItem</td>
+<td>根据队列项的id查找队列项</td>
 </tr>
 </table>
 
@@ -237,5 +286,7 @@
 
 
 ## Demo预览图
+
+具体示例代码请参见：`demo/index.html`
 
 ![](https://raw.githubusercontent.com/xucongli1989/xPromiseQueue/master/demo/img.gif)

@@ -224,6 +224,7 @@ define(["require", "exports"], function (require, exports) {
                             }
                             cur.destroyCallback && cur.destroyCallback();
                             item.next = cur.clone();
+                            item.run();
                             if (i == 0) {
                                 //当前项为第一项
                                 this._qList.splice(0, 0, item);
@@ -358,14 +359,14 @@ define(["require", "exports"], function (require, exports) {
             return c;
         }
         /**
-         * 锁定队列，不允许再注册新项
+         * 锁定队列，不允许再修改队列
          */
         lock() {
             this._isLock = true;
             return this;
         }
         /**
-         * 解锁队列，允许注册新项
+         * 解锁队列，允许修改队列
          */
         unLock() {
             this._isLock = false;
@@ -377,6 +378,9 @@ define(["require", "exports"], function (require, exports) {
          * @param item 要销毁的队列项
          */
         destroy(item) {
+            if (this._isLock) {
+                return this;
+            }
             if (null == item || item.isComplete()) {
                 return this;
             }
@@ -413,6 +417,9 @@ define(["require", "exports"], function (require, exports) {
          * 销毁整个队列
          */
         clear() {
+            if (this._isLock) {
+                return this;
+            }
             let cur = this.getCur();
             if (cur) {
                 cur.next = null;

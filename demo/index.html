@@ -19,9 +19,8 @@
         <div id="divLog"></div>
     </fieldset>
 
-
-    <br/>
-    <br/>
+    <br />
+    <br />
 
     <fieldset>
         <legend>
@@ -30,16 +29,16 @@
         <div id="divQueue"></div>
     </fieldset>
 
-    <br/>
-    <br/>
+    <br />
+    <br />
 
     <fieldset>
         <legend>
             <strong>Action:</strong>
         </legend>
         <div>
-            <p>
-                注：初始队列中已包含两个默认的执行项。
+            <p style="color:#f00;font-weight:bolder;">
+                注：初始队列中已包含两个默认的执行项：【弹窗A】和【弹窗B】
             </p>
             <button id="btnRun" style="color:#f00;">运行队列</button>
             <button id="btnAdd">追加一项任务至目前队列中</button>
@@ -47,19 +46,24 @@
             <button id="btnDestroy">销毁正在执行的队列项</button>
             <button id="btnDestroyAll">销毁整个队列</button>
 
-            <br/><br/>
+            <br /><br />
 
             <button id="btnRegUnique">用新的队列项覆盖现有队列，并锁定此队列</button>
             <button id="btnComplete">检查队列是否已执行完</button>
             <button id="btnGetCurPromise">设置一个表示当前时刻整个队列执行结束后的回调</button>
+
+            <br /><br />
+
+            <button id="btnAddBefore">在当前正在执行中的队列项之前加上新的队列项</button>
+            <button id="btnAddAfter">在当前正在执行中的队列项之后加上新的队列项</button>
+            <button id="btnAddToB">在默认弹窗【B】的前后都添加一个新的队列项</button>
         </div>
     </fieldset>
-
-
 
     <script type="text/javascript">
         require(['./../build/xPromiseQueue'], (xPromiseQueue) => {
 
+            let dialogBId = "dialogB";
             let { QItem, Queue } = xPromiseQueue['default'];
             let test = new Queue();
             let obj = null;
@@ -80,7 +84,7 @@
             obj = new QItem(function () {
                 let _this = this;
                 let dg = art.dialog({
-                    content: '我是一个默认弹窗哦，快点下面的按钮<br/>注：如果<strong>取消本弹窗</strong>，则不再往后执行其它队列项！',
+                    content: '我是【A】哦，快点下面的按钮<br />注：如果<strong>取消本弹窗</strong>，则不再往后执行其它队列项！',
                     ok: function () {
                         _this.resolve();
                         log.call(_this);
@@ -95,13 +99,13 @@
                     log('已成功销毁该队列项！');
                 };
             });
-            obj.name = "默认弹窗1";
+            obj.name = "弹窗A";
             test.reg(obj);
 
             obj = new QItem(function () {
                 let _this = this;
                 let dg = art.dialog({
-                    content: '我又是一个默认弹窗，你点了吗？',
+                    content: '我是【B】，你点了吗？',
                     ok: function () {
                         _this.resolve();
                         log.call(_this);
@@ -116,9 +120,9 @@
                     log('已成功销毁该队列项！');
                 };
             });
-            obj.name = "默认弹窗2";
+            obj.name = "弹窗B";
+            obj.id = dialogBId;
             test.reg(obj);
-
 
             document.addEventListener('click', () => {
                 showQueueLog();
@@ -137,7 +141,7 @@
                 obj = new QItem(function () {
                     let _this = this;
                     let dg = art.dialog({
-                        content: '我是一个新加的弹窗，点一下吧？',
+                        content: '我是新加的【C】，点一下吧？',
                         ok: function () {
                             _this.resolve();
                             log.call(_this);
@@ -152,7 +156,7 @@
                         log('已成功销毁该队列项！');
                     };
                 });
-                obj.name = '新加的弹窗';
+                obj.name = '弹窗C';
                 test.reg(obj);
 
             });
@@ -162,7 +166,7 @@
                 obj = new QItem(function () {
                     let _this = this;
                     let dg = art.dialog({
-                        content: '我是一个新加的<span style="color:#f00;">高优先级</span>的弹窗，点一下吧？',
+                        content: '我是一个新加的<span style="color:#f00;">高优先级</span>的弹窗【D】，点一下吧？',
                         ok: function () {
                             _this.resolve();
                             log.call(_this);
@@ -177,11 +181,10 @@
                         log('已成功销毁该队列项！');
                     };
                 });
-                obj.name = '新加的高优先级的弹窗';
+                obj.name = '高优先级的弹窗D';
                 test.reg(obj, 1);
 
             });
-
 
             document.getElementById('btnDestroy').addEventListener('click', () => {
 
@@ -199,12 +202,11 @@
                 log('已销毁整个队列！');
             });
 
-
             document.getElementById('btnRegUnique').addEventListener('click', () => {
                 obj = new QItem(function () {
                     let _this = this;
                     let dg = art.dialog({
-                        content: '我是一个覆盖现有弹窗的超级弹窗，点一下吧？',
+                        content: '我是一个覆盖现有弹窗的超级弹窗【E】，点一下吧？',
                         ok: function () {
                             _this.resolve();
                             log.call(_this);
@@ -219,7 +221,7 @@
                         log('已成功销毁该队列项！');
                     };
                 });
-                obj.name = '这是覆盖现有弹窗的超级弹窗';
+                obj.name = '超级弹窗E';
                 test.regUnique(obj);
                 log('已覆盖整个队列！');
             });
@@ -239,11 +241,92 @@
                 });
             });
 
+            document.getElementById("btnAddBefore").addEventListener("click", () => {
+                test.regBefore(test.getCur(), new QItem(function () {
+                    let _this = this;
+                    let dg = art.dialog({
+                        content: '我是在当前项之前插队的新弹窗【F】！',
+                        ok: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        },
+                        cancel: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        }
+                    });
+                    this.destroyCallback = () => {
+                        dg.close();
+                        log('已成功销毁该队列项！');
+                    };
+                    this.name = "弹窗F";
+                }));
+            });
+
+            document.getElementById("btnAddAfter").addEventListener("click", () => {
+                test.regAfter(test.getCur(), new QItem(function () {
+                    let _this = this;
+                    let dg = art.dialog({
+                        content: '我是在当前项之后插队的新弹窗【G】！',
+                        ok: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        },
+                        cancel: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        }
+                    });
+                    this.destroyCallback = () => {
+                        dg.close();
+                        log('已成功销毁该队列项！');
+                    };
+                    this.name = "弹窗G";
+                }));
+            });
+
+            document.getElementById("btnAddToB").addEventListener("click", () => {
+                let dialogBQItemObj = test.getQItemById(dialogBId);
+                test.regAfter(dialogBQItemObj, new QItem(function () {
+                    let _this = this;
+                    let dg = art.dialog({
+                        content: '我是在默认弹窗【B】之后插队的新弹窗【H】！',
+                        ok: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        },
+                        cancel: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        }
+                    });
+                    this.destroyCallback = () => {
+                        dg.close();
+                        log('已成功销毁该队列项！');
+                    };
+                    this.name = "弹窗H";
+                })).regBefore(dialogBQItemObj, new QItem(function () {
+                    let _this = this;
+                    let dg = art.dialog({
+                        content: '我是在默认弹窗【B】之前插队的新弹窗【I】！',
+                        ok: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        },
+                        cancel: function () {
+                            _this.resolve();
+                            log.call(_this);
+                        }
+                    });
+                    this.destroyCallback = () => {
+                        dg.close();
+                        log('已成功销毁该队列项！');
+                    };
+                    this.name = "弹窗I";
+                }));
+            });
+
         });
     </script>
-
-
-
 </body>
-
 </html>
