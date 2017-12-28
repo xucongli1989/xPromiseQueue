@@ -302,8 +302,8 @@ class Queue {
         if (!isForce && this._isLock) {
             return this;
         }
-        this.clear();
         this.unLock();
+        this.clear();
         this.reg(item);
         this.lock();
         return this;
