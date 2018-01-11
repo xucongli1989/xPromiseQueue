@@ -14,20 +14,20 @@ define(["require", "exports"], function (require, exports) {
      */
     var PromiseStatus;
     (function (PromiseStatus) {
-        PromiseStatus[PromiseStatus["None"] = 0] = "None";
-        PromiseStatus[PromiseStatus["Pending"] = 1] = "Pending";
-        PromiseStatus[PromiseStatus["Fulfilled"] = 2] = "Fulfilled";
-        PromiseStatus[PromiseStatus["Rejected"] = 3] = "Rejected";
-    })(PromiseStatus || (PromiseStatus = {}));
+        PromiseStatus["None"] = "none";
+        PromiseStatus["Pending"] = "pending";
+        PromiseStatus["Fulfilled"] = "fulfilled";
+        PromiseStatus["Rejected"] = "rejected";
+    })(PromiseStatus = exports.PromiseStatus || (exports.PromiseStatus = {}));
     /**
      * 优先级
      */
     var Priority;
     (function (Priority) {
-        Priority[Priority["Low"] = 0] = "Low";
-        Priority[Priority["High"] = 1] = "High";
-        Priority[Priority["Highest"] = 2] = "Highest";
-    })(Priority || (Priority = {}));
+        Priority["Low"] = "low";
+        Priority["High"] = "high";
+        Priority["Highest"] = "highest";
+    })(Priority = exports.Priority || (exports.Priority = {}));
     class QueuePromiseContext {
         constructor() {
             this.init();
@@ -38,6 +38,7 @@ define(["require", "exports"], function (require, exports) {
             });
         }
     }
+    exports.QueuePromiseContext = QueuePromiseContext;
     class QItemInitOptions {
     }
     /**
@@ -148,6 +149,7 @@ define(["require", "exports"], function (require, exports) {
             return q;
         }
     }
+    exports.QItem = QItem;
     /**
      * 模块主体
      */
@@ -482,6 +484,6 @@ define(["require", "exports"], function (require, exports) {
             return null;
         }
     }
-    exports.default = { QItem, Queue };
+    exports.Queue = Queue;
 });
 //# sourceMappingURL=xPromiseQueue.js.map

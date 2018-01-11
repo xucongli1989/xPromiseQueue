@@ -10,23 +10,23 @@
 /**
  * Promise状态
  */
-enum PromiseStatus {
-    None,
-    Pending,
-    Fulfilled,
-    Rejected
+export enum PromiseStatus {
+    None = "none",
+    Pending = "pending",
+    Fulfilled = "fulfilled",
+    Rejected = "rejected"
 }
 
 /**
  * 优先级
  */
-enum Priority {
-    Low,
-    High,
-    Highest
+export enum Priority {
+    Low = "low",
+    High = "high",
+    Highest = "highest"
 }
 
-class QueuePromiseContext {
+export class QueuePromiseContext {
     constructor() {
         this.init();
     }
@@ -49,7 +49,7 @@ class QItemInitOptions {
 /**
  * 执行项
  */
-class QItem {
+export class QItem {
     /**
      * 初始函数
      */
@@ -65,7 +65,7 @@ class QItem {
     /**
     * 初始化时的选项
     */
-    initOptions: QItemInitOptions = new QItemInitOptions()
+    private initOptions: QItemInitOptions = new QItemInitOptions()
 
     /**
     * 唯一标识
@@ -174,7 +174,7 @@ class QItem {
 /**
  * 模块主体
  */
-class Queue {
+export class Queue {
     private _promiseContext: QueuePromiseContext = new QueuePromiseContext()
     /**
      * 是否为监听中
@@ -522,5 +522,3 @@ class Queue {
         return null;
     }
 }
-
-export default { QItem, Queue };

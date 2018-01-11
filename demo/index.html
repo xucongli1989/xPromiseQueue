@@ -46,13 +46,15 @@
             <button id="btnDestroy">销毁正在执行的队列项</button>
             <button id="btnDestroyAll">销毁整个队列</button>
 
-            <br /><br />
+            <br />
+            <br />
 
             <button id="btnRegUnique">用新的队列项覆盖现有队列，并锁定此队列</button>
             <button id="btnComplete">检查队列是否已执行完</button>
             <button id="btnGetCurPromise">设置一个表示当前时刻整个队列执行结束后的回调</button>
 
-            <br /><br />
+            <br />
+            <br />
 
             <button id="btnAddBefore">在当前正在执行中的队列项之前加上新的队列项</button>
             <button id="btnAddAfter">在当前正在执行中的队列项之后加上新的队列项</button>
@@ -64,7 +66,7 @@
         require(['./../build/xPromiseQueue'], (xPromiseQueue) => {
 
             let dialogBId = "dialogB";
-            let { QItem, Queue } = xPromiseQueue['default'];
+            let { QItem, Queue, Priority } = xPromiseQueue;
             let test = new Queue();
             let obj = null;
             let divLog = document.getElementById('divLog');
@@ -182,7 +184,7 @@
                     };
                 });
                 obj.name = '高优先级的弹窗D';
-                test.reg(obj, 1);
+                test.reg(obj, Priority.High);
 
             });
 
@@ -329,4 +331,5 @@
         });
     </script>
 </body>
+
 </html>
