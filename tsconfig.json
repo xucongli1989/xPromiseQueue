@@ -6,7 +6,9 @@
         "removeComments": false,
         "preserveConstEnums": true,
         "sourceMap": true,
-        "outDir": "./build/"
+        "outDir": "./build/",
+        "declarationDir":"./build/",
+        "declaration": true
     },
     "files": [
         "./src/xPromiseQueue.ts"
