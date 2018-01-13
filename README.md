@@ -19,7 +19,7 @@
 
 ## API
 
-公开的模块内容为`export default { QItem, Queue }`,其中`QItem`是队列中的执行项，`Queue`是队列。
+公开的主要模块内容为`QItem, Queue`,其中`QItem`是队列中的执行项，`Queue`是队列。
 
 `QItem`:
 
@@ -285,8 +285,8 @@
 	//test 2...
 
 
-## Demo预览图
+## 简单Demo预览
 
-具体示例代码请参见：`demo/index.html`
+更多示例请参见：`demo/index.html`
 
 ![](https://raw.githubusercontent.com/xucongli1989/xPromiseQueue/master/demo/img.gif)
